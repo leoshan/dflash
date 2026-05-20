@@ -1,0 +1,30 @@
+{
+    "4": {
+        "latency_s": 405.6,
+        "output_tokens": 54768,
+        "throughput_tok_s": 135.03,
+        "accept_length": 3.535,
+        "spec_verify_count": 15760
+    },
+    "8": {
+        "latency_s": 277.8,
+        "output_tokens": 56192,
+        "throughput_tok_s": 202.3,
+        "accept_length": 5.521,
+        "spec_verify_count": 10685
+    },
+    "16": {
+        "latency_s": 229.7,
+        "output_tokens": 56018,
+        "throughput_tok_s": 243.85,
+        "accept_length": 6.918,
+        "spec_verify_count": 8754
+    },
+    "32": {
+        "latency_s": 234.8,
+        "output_tokens": 53413,
+        "throughput_tok_s": 227.46,
+        "accept_length": 6.243,
+        "spec_verify_count": 8914
+    }
+}
