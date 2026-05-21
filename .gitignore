@@ -1,3 +1,6 @@
 __pycache__/
 cache/
 *.egg-info/
+models/
+*.log
+benchmark_*_raw.log

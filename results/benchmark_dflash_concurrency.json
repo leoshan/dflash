@@ -1,0 +1,74 @@
+{
+    "baseline": {
+        "1": {
+            "latency_s": 1050.7,
+            "output_tokens": 53107,
+            "throughput_tok_s": 50.54,
+            "mem_fraction_static": 0.7
+        },
+        "2": {
+            "latency_s": 531.4,
+            "output_tokens": 52757,
+            "throughput_tok_s": 99.28,
+            "mem_fraction_static": 0.7
+        },
+        "4": {
+            "latency_s": 273.5,
+            "output_tokens": 53387,
+            "throughput_tok_s": 195.22,
+            "mem_fraction_static": 0.6
+        },
+        "8": {
+            "latency_s": 142.1,
+            "output_tokens": 51910,
+            "throughput_tok_s": 365.3,
+            "mem_fraction_static": 0.5
+        }
+    },
+    "dflash": {
+        "1": {
+            "latency_s": 214.8,
+            "output_tokens": 53399,
+            "throughput_tok_s": 248.63,
+            "accept_length": 6.951,
+            "spec_verify_count": 8128,
+            "mem_fraction_static": 0.5,
+            "mean_accept_rate": 0.40391304347826085,
+            "std_accept_rate": 0.09015098539689917,
+            "sample_count": 207
+        },
+        "2": {
+            "latency_s": 118.4,
+            "output_tokens": 55780,
+            "throughput_tok_s": 471.3,
+            "accept_length": 6.942,
+            "spec_verify_count": 8669,
+            "mem_fraction_static": 0.5,
+            "mean_accept_rate": 0.3963392857142857,
+            "std_accept_rate": 0.06116423347539518,
+            "sample_count": 112
+        },
+        "4": {
+            "latency_s": 56.9,
+            "output_tokens": 52126,
+            "throughput_tok_s": 916.1,
+            "accept_length": 6.982,
+            "spec_verify_count": 7835,
+            "mem_fraction_static": 0.7,
+            "mean_accept_rate": 0.410188679245283,
+            "std_accept_rate": 0.04039851323799568,
+            "sample_count": 53
+        },
+        "8": {
+            "latency_s": 32.2,
+            "output_tokens": 51889,
+            "throughput_tok_s": 1612.29,
+            "accept_length": 6.992,
+            "spec_verify_count": 7798,
+            "mem_fraction_static": 0.7,
+            "mean_accept_rate": 0.4089285714285714,
+            "std_accept_rate": 0.029196292048610472,
+            "sample_count": 28
+        }
+    }
+}
