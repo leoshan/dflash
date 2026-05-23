@@ -1,0 +1,79 @@
+<mxfile host="65bd71144e">
+    <diagram id="dflash-architecture" name="DFlash 投机解码架构">
+        <mxGraphModel dx="893" dy="788" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;目标模型 (例如 Qwen3.5-9B)&lt;/font&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="180" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="层 L_1 (例如 第 5 层)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="2" vertex="1">
+                    <mxGeometry x="15" y="40" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="层 L_2 (例如 第 15 层)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="2" vertex="1">
+                    <mxGeometry x="15" y="95" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="层 L_k (例如 第 25 层)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="2" vertex="1">
+                    <mxGeometry x="15" y="150" width="150" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="上下文特征提取&lt;br&gt;&lt;b&gt;extract_context_feature()&lt;/b&gt;&lt;br&gt;沿最后一个维度 (dim=-1) 拼接" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="160" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="投影层&lt;br&gt;&lt;b&gt;fc + hidden_norm&lt;/b&gt;&lt;br&gt;(对齐到草稿模型隐藏层维度)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="490" y="160" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="草稿输入块&lt;br&gt;&lt;b&gt;[T_0, Mask, Mask, Mask]&lt;/b&gt;" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="380" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="共享的目标模型嵌入层&lt;br&gt;&lt;b&gt;embed_tokens&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="380" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="DFlash 草稿层&lt;br&gt;&lt;b&gt;Transformer 层&lt;/b&gt;&lt;br&gt;双向注意力机制&lt;br&gt;(is_causal = False)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="490" y="340" width="160" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="共享的目标模型输出头&lt;br&gt;&lt;b&gt;lm_head&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="360" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="并行块 Token&lt;br&gt;&lt;b&gt;[Token_1, Token_2, Token_3]&lt;/b&gt;&lt;br&gt;(单步一次性采样)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="240" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="目标模型验证&lt;br&gt;在草稿块上运行目标模型&lt;br&gt;并行校验 Token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="80" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="&lt;b&gt;接受 M 个 Token&lt;/b&gt;&lt;br&gt;裁剪目标模型 KV Cache&lt;br&gt;进入下一次循环" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="490" y="10" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="2" target="6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="6" target="7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="目标隐状态 (target_hidden)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="7" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="8" target="9" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="噪声嵌入向量 &lt;br&gt;(noise_embeddings)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="9" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="10" target="11" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="11" target="12" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="12" target="13" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="13" target="14" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="返回循环 / 更新上下文" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="14" target="2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

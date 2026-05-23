@@ -1,0 +1,124 @@
+<mxfile host="65bd71144e">
+    <diagram id="dflash-single-token" name="DFlash Single Token Generation Flow">
+        <mxGraphModel dx="703" dy="579" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="DFlash Draft Model: Single Token / Block Generation Step" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="20" width="440" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="input_target" value="Target Model Hidden States&lt;br&gt;(from selected layers)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="80" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="input_draft" value="Draft Input / Noise Token ID&lt;br&gt;(e.g., [T_0] or [Mask])" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="80" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="proc_target" value="Context Feature Extraction&lt;br&gt;&lt;b&gt;extract_context_feature()&lt;/b&gt;&lt;br&gt;+ Projection (fc) &amp;amp; hidden_norm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="170" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="proc_draft" value="Shared Embedding Layer&lt;br&gt;&lt;b&gt;target.model.embed_tokens&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="170" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer_container" value="DFlash Draft Decoder Layer (Qwen3DFlashDecoderLayer)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="270" width="540" height="320" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer_norm_1" value="Input RMSNorm&lt;br&gt;&lt;b&gt;input_layernorm&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" parent="layer_container" vertex="1">
+                    <mxGeometry x="320" y="40" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="attention_block" value="Cross-Attention Layer&lt;br&gt;&lt;b&gt;Qwen3DFlashAttention&lt;/b&gt;&lt;br&gt;&lt;br&gt;Q = q_proj(hidden_states)&lt;br&gt;K = concat[k_proj(target_hidden), k_proj(hidden_states)]&lt;br&gt;V = concat[v_proj(target_hidden), v_proj(hidden_states)]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;align=left;spacingLeft=10;" parent="layer_container" vertex="1">
+                    <mxGeometry x="40" y="110" width="440" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="mlp_block" value="MLP Block&lt;br&gt;&lt;b&gt;post_attn_layernorm + mlp&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" parent="layer_container" vertex="1">
+                    <mxGeometry x="320" y="240" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="hidden_states" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" parent="layer_container" source="layer_norm_1" target="attention_block" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="400" y="100"/>
+                            <mxPoint x="370" y="100"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" value="Attn Output" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="layer_container" source="attention_block" target="mlp_block" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="370" y="220"/>
+                            <mxPoint x="400" y="220"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="res1" value="Residual" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.1;entryY=1;entryDx=0;entryDy=0;strokeColor=#b85450;fillColor=#f8cecc;dashed=1;" parent="layer_container" source="layer_norm_1" target="attention_block" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="400" y="90"/>
+                            <mxPoint x="510" y="90"/>
+                            <mxPoint x="510" y="225"/>
+                            <mxPoint x="84" y="225"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="res2" value="Residual" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.1;entryY=1;entryDx=0;entryDy=0;strokeColor=#b85450;fillColor=#f8cecc;dashed=1;" parent="layer_container" source="attention_block" target="mlp_block" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="260" y="225"/>
+                            <mxPoint x="510" y="225"/>
+                            <mxPoint x="510" y="305"/>
+                            <mxPoint x="336" y="305"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="output_norm" value="Output RMSNorm&lt;br&gt;&lt;b&gt;model.norm&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="620" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="lm_head" value="Shared Language Model Head&lt;br&gt;&lt;b&gt;target.lm_head&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="690" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="sampling" value="Sampling&lt;br&gt;&lt;b&gt;sample(logits, temp)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="770" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="token_out" value="Generated Draft Token ID" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="850" width="220" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="input_target" target="proc_target" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="input_draft" target="proc_draft" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="target_hidden" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="proc_target" target="attention_block" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="360"/>
+                            <mxPoint x="190" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" value="noise_embedding" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="proc_draft" target="layer_norm_1" edge="1">
+                    <mxGeometry y="-10" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="460" y="310"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="layer_container" target="output_norm" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="310" y="605"/>
+                            <mxPoint x="460" y="605"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="output_norm" target="lm_head" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="lm_head" target="sampling" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="sampling" target="token_out" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

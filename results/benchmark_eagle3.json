@@ -1,0 +1,9 @@
+{
+  "model": "Qwen/Qwen3.5-9B",
+  "backend": "sglang",
+  "dataset": "gsm8k",
+  "algorithm": "EAGLE3",
+  "status": "failed",
+  "error": "AttributeError: 'Qwen2ForCausalLM' object has no attribute 'set_embed'",
+  "notes": "SGLang's EAGLE3 implementation currently lacks support for Qwen2/3 architecture draft models (missing set_embed method)."
+}

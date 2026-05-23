@@ -2,7 +2,10 @@ __pycache__/
 cache/
 *.egg-info/
 models/
+models
+checkpoints/
 *.log
 benchmark_*_raw.log
 *.pt
 *.jsonl
+logs/

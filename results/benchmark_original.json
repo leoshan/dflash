@@ -1,0 +1,11 @@
+{
+  "model": "Qwen/Qwen3.5-9B",
+  "backend": "sglang",
+  "dataset": "gsm8k",
+  "num_prompts": 128,
+  "concurrency": 1,
+  "latency_seconds": 1053.4,
+  "output_tokens": 53107,
+  "throughput_tok_s": 50.41,
+  "notes": "Testing for 9B model since 27B exceeds VRAM."
+}
