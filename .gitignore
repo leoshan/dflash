@@ -4,3 +4,5 @@ cache/
 models/
 *.log
 benchmark_*_raw.log
+*.pt
+*.jsonl

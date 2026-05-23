@@ -41,7 +41,9 @@ def extract_context_feature(
     layer_ids: Optional[list[int]],
 ) -> torch.Tensor:
     offset = 1
-    selected_states = [hidden_states[layer_id + offset] for layer_id in layer_ids]
+    # Ensure all selected states are on the same device before concatenation
+    common_device = hidden_states[layer_ids[0] + offset].device
+    selected_states = [hidden_states[layer_id + offset].to(common_device) for layer_id in layer_ids]
     return torch.cat(selected_states, dim=-1)
 
 
@@ -57,6 +59,19 @@ def sample(logits: torch.Tensor, temperature: float = 0.0) -> torch.Tensor:
 def _cuda_time() -> float:
     torch.cuda.synchronize()
     return time.perf_counter()
+def copy_cache(cache):
+    if cache is None:
+        return None
+    import copy
+    new_cache = copy.copy(cache)
+    if hasattr(cache, "key_cache"):
+        new_cache.key_cache = [t.clone() if t is not None else None for t in cache.key_cache]
+        new_cache.value_cache = [t.clone() if t is not None else None for t in cache.value_cache]
+    if hasattr(cache, "conv_states"):
+        new_cache.conv_states = [t.clone() if t is not None else None for t in cache.conv_states]
+    if hasattr(cache, "recurrent_states"):
+        new_cache.recurrent_states = [t.clone() if t is not None else None for t in cache.recurrent_states]
+    return new_cache
 
 
 @torch.inference_mode()
@@ -80,7 +95,7 @@ def dflash_generate(
         (1, max_length + block_size), mask_token_id, dtype=torch.long, device=target.device,
     )
     position_ids = torch.arange(output_ids.shape[1], device=target.device).unsqueeze(0)
-    past_key_values_target = DynamicCache()
+    past_key_values_target = None
     past_key_values_draft = DynamicCache()
 
     prefill_start = _cuda_time() if return_stats else None
@@ -92,9 +107,10 @@ def dflash_generate(
         logits_to_keep=1,
         output_hidden_states=block_size > 1,
     )
+    past_key_values_target = output.past_key_values
 
     output_ids[:, :num_input_tokens] = input_ids
-    output_ids[:, num_input_tokens:num_input_tokens + 1] = sample(output.logits, temperature)
+    output_ids[:, num_input_tokens:num_input_tokens + 1] = sample(output.logits, temperature).to(output_ids.device)
     if block_size > 1:
         target_hidden = extract_context_feature(output.hidden_states, model.target_layer_ids)
     time_to_first_token = _cuda_time() - prefill_start if return_stats else None
@@ -109,20 +125,27 @@ def dflash_generate(
         block_position_ids = position_ids[:, start : start + block_size]
         if block_size > 1:
             noise_embedding = target.model.embed_tokens(block_output_ids)
-            draft_logits = target.lm_head(model(
+            draft_output = model(
                 target_hidden=target_hidden,
                 noise_embedding=noise_embedding,
                 position_ids=position_ids[:, past_key_values_draft.get_seq_length(): start + block_size],
                 past_key_values=past_key_values_draft,
                 use_cache=True,
                 is_causal=False,
-            )[:, 1 - block_size :, :])
+            )[:, 1 - block_size :, :]
+            
+            # Ensure draft output is on the same device as lm_head weights
+            lm_head_device = target.lm_head.weight.device
+            draft_logits = target.lm_head(draft_output.to(device=lm_head_device))
             past_key_values_draft.crop(start)
-            block_output_ids[:, 1:] = sample(draft_logits)
+            block_output_ids[:, 1:] = sample(draft_logits).to(block_output_ids.device)
             if draft_prefill and return_stats:
                 draft_prefill = False
                 decode_start = _cuda_time()
 
+        # Backup target cache before the forward pass
+        target_cache_backup = copy_cache(past_key_values_target)
+        
         output = target(
             block_output_ids,
             position_ids=block_position_ids,
@@ -131,12 +154,26 @@ def dflash_generate(
             output_hidden_states=block_size > 1,
         )
 
-        posterior = sample(output.logits, temperature)
+        posterior = sample(output.logits, temperature).to(block_output_ids.device)
         acceptance_length = (block_output_ids[:, 1:] == posterior[:, :-1]).cumprod(dim=1).sum(dim=1)[0].item()
+        
+        # If not all tokens were accepted, we rollback the cache and re-run target on accepted tokens
+        if acceptance_length < block_size - 1:
+            past_key_values_target = copy_cache(target_cache_backup)
+            accepted_output_ids = block_output_ids[:, :acceptance_length + 1]
+            accepted_position_ids = block_position_ids[:, :acceptance_length + 1]
+            output = target(
+                accepted_output_ids,
+                position_ids=accepted_position_ids,
+                past_key_values=past_key_values_target,
+                use_cache=True,
+                output_hidden_states=block_size > 1,
+            )
+            posterior = sample(output.logits, temperature).to(block_output_ids.device)
+
         output_ids[:, start : start + acceptance_length + 1] = block_output_ids[:, : acceptance_length + 1]
         output_ids[:, start + acceptance_length + 1] = posterior[:, acceptance_length]
         start += acceptance_length + 1
-        past_key_values_target.crop(start)
         acceptance_lengths.append(acceptance_length + 1)
 
         if block_size > 1:
@@ -330,7 +367,16 @@ class DFlashDraftModel(Qwen3PreTrainedModel):
         use_cache: bool = False,
         **kwargs,
     ) -> CausalLMOutputWithPast:
-        hidden_states = noise_embedding
+        device = self.fc.weight.device
+        dtype = self.fc.weight.dtype
+        
+        # Safe device and dtype casting
+        hidden_states = noise_embedding.to(device=device, dtype=dtype)
+        target_hidden = target_hidden.to(device=device, dtype=dtype)
+        position_ids = position_ids.to(device=device)
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(device=device, dtype=dtype)
+            
         target_hidden = self.hidden_norm(self.fc(target_hidden))
         position_embeddings = self.rotary_emb(hidden_states, position_ids)
         for layer in self.layers:
